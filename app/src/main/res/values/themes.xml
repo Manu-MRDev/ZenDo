@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.ZenDo" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.ZenDo.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#FFFFFF</item> <!-- Color de fondo -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/logo</item> <!-- Icono -->
+        <item name="postSplashScreenTheme">@style/Theme.ZenDo</item> <!-- Tema principal -->
+    </style>
+</resources>

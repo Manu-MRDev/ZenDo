@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "772578531195",
+    "project_id": "zendo-2ef0f",
+    "storage_bucket": "zendo-2ef0f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:772578531195:android:ac82dca38709481cab4fde",
+        "android_client_info": {
+          "package_name": "mx.com.virtualhand.zendo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "772578531195-pdr5fpj7epbhuuqa74alvenf3so3alri.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "mx.com.virtualhand.zendo",
+            "certificate_hash": "efae15d3f62b7198a74afc70837f11255aaf663b"
+          }
+        },
+        {
+          "client_id": "772578531195-0eorgdv916aj5ulahqs9huvdbh66dbo3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDlvFMb5xcCHiffzVKFF-BZdrnXZwj24rI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "772578531195-0eorgdv916aj5ulahqs9huvdbh66dbo3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
