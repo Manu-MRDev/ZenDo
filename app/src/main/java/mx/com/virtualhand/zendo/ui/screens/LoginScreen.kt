@@ -1,4 +1,4 @@
-package mx.com.virtualhand.zendo
+package mx.com.virtualhand.zendo.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
