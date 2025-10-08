@@ -1,59 +1,57 @@
 package mx.com.virtualhand.zendo
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import mx.com.virtualhand.zendo.data.AuthRepository
 import mx.com.virtualhand.zendo.domain.AuthUseCase
 import mx.com.virtualhand.zendo.ui.screens.LoginScreen
-import mx.com.virtualhand.zendo.ui.screens.MainScreen
+import mx.com.virtualhand.zendo.ui.screens.MainScreenWithBottomNav
 import mx.com.virtualhand.zendo.ui.theme.ZenDoTheme
-import mx.com.virtualhand.zendo.domain.TaskUseCase
-import mx.com.virtualhand.zendo.data.TaskRepository
+import mx.com.virtualhand.zendo.ui.viewmodel.TaskViewModel
+import mx.com.virtualhand.zendo.ui.viewmodel.TaskViewModelFactory
 
 class MainActivity : ComponentActivity() {
 
-    private lateinit var auth: FirebaseAuth
     private lateinit var authUseCase: AuthUseCase
-    private lateinit var taskUseCase: TaskUseCase
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
 
-        // Inicializar Firebase Auth y repositorios
-        auth = Firebase.auth
-        val authRepository = AuthRepository(auth)
-        authUseCase = AuthUseCase(authRepository)
-
-        val taskRepository = TaskRepository()
-        taskUseCase = TaskUseCase(taskRepository)
+        val auth = Firebase.auth
+        authUseCase = AuthUseCase(AuthRepository(auth))
 
         setContent {
             ZenDoTheme {
                 var isLoggedIn by remember { mutableStateOf(authUseCase.getCurrentUser() != null) }
 
-                Surface(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
-                    if (isLoggedIn) {
-                        // Pantalla principal estilo ZenDo
-                        MainScreen(taskUseCase)
-                    } else {
-                        // Pantalla de login
-                        LoginScreen(
-                            onGoogleLogin = { signInWithGoogle { success -> isLoggedIn = success } },
-                            onGithubLogin = { signInWithGitHub { success -> isLoggedIn = success } }
-                        )
-                    }
+                if (isLoggedIn) {
+                    val taskViewModel: TaskViewModel = viewModel(
+                        factory = TaskViewModelFactory(applicationContext)
+                    )
+
+                    val navController = rememberNavController() // ✅ Creamos NavController aquí
+
+                    MainScreenWithBottomNav(
+                        navController = navController,
+                        taskViewModel = taskViewModel
+                    )
+                } else {
+                    LoginScreen(
+                        onGoogleLogin = { signInWithGoogle { success -> isLoggedIn = success } },
+                        onGithubLogin = { signInWithGitHub { success -> isLoggedIn = success } }
+                    )
                 }
             }
         }
@@ -99,4 +97,3 @@ class MainActivity : ComponentActivity() {
             .addOnFailureListener { onResult(false) }
     }
 }
-

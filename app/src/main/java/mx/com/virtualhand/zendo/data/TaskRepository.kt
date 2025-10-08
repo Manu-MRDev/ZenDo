@@ -1,28 +1,34 @@
 package mx.com.virtualhand.zendo.data
 
-import androidx.compose.runtime.mutableStateListOf
+import android.content.Context
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import mx.com.virtualhand.zendo.domain.Task
 
-class TaskRepository {
+private val Context.dataStore by preferencesDataStore(name = "tasks_store")
 
-    // Lista mutable de tareas (simulación)
-    val tasks = mutableStateListOf(
-        Task(title = "Reunión de equipo", time = "09:00", category = "Trabajo"),
-        Task(title = "Ejercicio", time = "18:00", category = "Salud"),
-        Task(title = "Estudiar Kotlin", time = "20:00", category = "Estudio")
-    )
+class TaskRepository(private val context: Context) {
 
-    fun addTask(task: Task) {
-        tasks.add(task)
-    }
+    private val TASKS_KEY = stringPreferencesKey("tasks_json")
+    private val gson = Gson()
 
-    fun removeTask(task: Task) {
-        tasks.remove(task)
-    }
+    // Obtener lista de tareas como Flow
+    val tasksFlow: Flow<List<Task>> = context.dataStore.data
+        .map { prefs ->
+            val json = prefs[TASKS_KEY]
+            if (json.isNullOrEmpty()) emptyList()
+            else gson.fromJson(json, object : TypeToken<List<Task>>() {}.type)
+        }
 
-    fun updateTask(updatedTask: Task) {
-        val index = tasks.indexOfFirst { it.id == updatedTask.id }
-        if (index >= 0) tasks[index] = updatedTask
+    // Guardar lista completa
+    suspend fun saveTasks(tasks: List<Task>) {
+        context.dataStore.edit { prefs ->
+            prefs[TASKS_KEY] = gson.toJson(tasks)
+        }
     }
 }
-

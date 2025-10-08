@@ -6,6 +6,7 @@ data class Task(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
     val time: String,
+    val date: String = "",
     val category: String,
     val done: Boolean = false
 )

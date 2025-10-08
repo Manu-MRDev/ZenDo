@@ -73,6 +73,12 @@ dependencies {
 
     // ✅ SplashScreen
     implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation(libs.material3)
+
+    //
+    implementation("androidx.datastore:datastore-preferences:1.1.0")
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation(libs.ui)
 
     // ✅ Testing
     testImplementation(libs.junit)
