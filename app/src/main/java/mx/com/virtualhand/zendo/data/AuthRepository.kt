@@ -33,4 +33,8 @@ class AuthRepository(
 
     // Revisar si ya hay usuario logueado
     fun getCurrentUser() = auth.currentUser
+
+    fun logout() {
+        auth.signOut()
+    }
 }

@@ -14,38 +14,58 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 import mx.com.virtualhand.zendo.domain.Task
-import mx.com.virtualhand.zendo.ui.components.AddTaskButton
-import mx.com.virtualhand.zendo.ui.components.BottomNavigationBar
-import mx.com.virtualhand.zendo.ui.components.MainTopBar
-import mx.com.virtualhand.zendo.ui.components.TaskCard
-import mx.com.virtualhand.zendo.ui.components.AddTaskForm
+import mx.com.virtualhand.zendo.ui.components.*
+import mx.com.virtualhand.zendo.ui.viewmodel.NoteViewModel
 import mx.com.virtualhand.zendo.ui.viewmodel.TaskViewModel
+import mx.com.virtualhand.zendo.ui.viewmodel.TimerViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MainScreenWithBottomNav(taskViewModel: TaskViewModel = viewModel()) {
-    val navController: NavHostController = rememberNavController()
+fun MainScreenWithBottomNav(
+    taskViewModel: TaskViewModel,
+    noteViewModel: NoteViewModel,
+    navController: NavHostController,
+    onLogout: () -> Unit // 🔹 Callback para cerrar sesión
+) {
     val tasks by taskViewModel.tasks.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
 
-    // Estados para el diálogo de tarea (compartido entre todas las pantallas)
+    // Estado para el diálogo de tarea
     var showTaskDialog by remember { mutableStateOf(false) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
+
+    // Estado de filtrado por categoría
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+
+    // Lista filtrada según categoría seleccionada
+    val filteredTasks = selectedCategory?.let { category ->
+        tasks.filter { it.category == category }
+    } ?: tasks
+
+    // TimerViewModel
+    val timerViewModel: TimerViewModel = viewModel()
 
     Scaffold(
         topBar = {
             MainTopBar(
                 categories = tasks.map { it.category }.distinct(),
-                onMenuItemClick = { /* Perfil, Configuración, Ayuda, Cerrar sesión */ },
-                onFilterSelected = { /* Filtrado global */ },
+                onMenuItemClick = { menuItem ->
+                    when (menuItem) {
+                        "Cerrar sesión" -> onLogout() // 🔹 Cierra sesión
+                        else -> { /* otras opciones */ }
+                    }
+                },
+                onFilterSelected = { category ->
+                    selectedCategory = category
+                },
                 onDateSelected = { /* Selección de fecha global */ }
             )
         },
         bottomBar = { BottomNavigationBar(navController = navController) }
     ) { paddingValues ->
+
         NavHost(
             navController = navController,
             startDestination = "agenda",
@@ -53,14 +73,14 @@ fun MainScreenWithBottomNav(taskViewModel: TaskViewModel = viewModel()) {
         ) {
             composable("agenda") {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    if (tasks.isEmpty()) {
+                    if (filteredTasks.isEmpty()) {
                         Text(
                             text = "No hay tareas",
                             modifier = Modifier.align(Alignment.Center)
                         )
                     } else {
                         LazyColumn(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-                            items(tasks) { task ->
+                            items(filteredTasks) { task ->
                                 TaskCard(
                                     task = task,
                                     onCheckedChange = { done ->
@@ -80,7 +100,7 @@ fun MainScreenWithBottomNav(taskViewModel: TaskViewModel = viewModel()) {
                         }
                     }
 
-                    // FAB solo en la pantalla de Agenda
+                    // FAB para agregar tarea
                     AddTaskButton(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
@@ -94,38 +114,34 @@ fun MainScreenWithBottomNav(taskViewModel: TaskViewModel = viewModel()) {
             }
 
             composable("tareas") {
-                TasksScreen(
-                    taskViewModel = taskViewModel
-                )
+                TasksScreen(taskViewModel = taskViewModel)
             }
 
             composable("categorias") {
-                Text(text = "Pantalla Categorías")
+                CategoriesScreen(taskViewModel = taskViewModel)
             }
 
             composable("notas") {
-                Text(text = "Pantalla Notas")
+                NotesScreen(noteViewModel = noteViewModel, navController = navController)
             }
 
             composable("timer") {
-                Text(text = "Pantalla Timer")
+                TimerScreen(timerViewModel = timerViewModel)
             }
         }
     }
 
-    // Diálogo compartido para agregar o editar tarea
+    // ----- DIÁLOGO COMPARTIDO DE TAREA -----
     if (showTaskDialog) {
         AddTaskForm(
             onDismiss = { showTaskDialog = false },
             onSave = { newTask ->
-                if (taskToEdit == null) {
-                    taskViewModel.addTask(newTask)
-                } else {
-                    taskViewModel.updateTask(newTask)
-                }
+                if (taskToEdit == null) taskViewModel.addTask(newTask)
+                else taskViewModel.updateTask(newTask)
                 showTaskDialog = false
             },
             existingTask = taskToEdit
         )
     }
 }
+

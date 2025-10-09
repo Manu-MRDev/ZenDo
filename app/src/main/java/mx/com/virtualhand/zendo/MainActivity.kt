@@ -18,6 +18,8 @@ import mx.com.virtualhand.zendo.domain.AuthUseCase
 import mx.com.virtualhand.zendo.ui.screens.LoginScreen
 import mx.com.virtualhand.zendo.ui.screens.MainScreenWithBottomNav
 import mx.com.virtualhand.zendo.ui.theme.ZenDoTheme
+import mx.com.virtualhand.zendo.ui.viewmodel.NoteViewModel
+import mx.com.virtualhand.zendo.ui.viewmodel.NoteViewModelFactory
 import mx.com.virtualhand.zendo.ui.viewmodel.TaskViewModel
 import mx.com.virtualhand.zendo.ui.viewmodel.TaskViewModelFactory
 
@@ -37,14 +39,24 @@ class MainActivity : ComponentActivity() {
                 var isLoggedIn by remember { mutableStateOf(authUseCase.getCurrentUser() != null) }
 
                 if (isLoggedIn) {
+
+                    val navController = rememberNavController()
+
                     val taskViewModel: TaskViewModel = viewModel(
                         factory = TaskViewModelFactory(applicationContext)
                     )
-
-                    val navController = rememberNavController() // ✅ Creamos NavController aquí
+                    val noteViewModel: NoteViewModel = viewModel(
+                        factory = NoteViewModelFactory(applicationContext)
+                    )
 
                     MainScreenWithBottomNav(
-                        taskViewModel = taskViewModel
+                        taskViewModel = taskViewModel,
+                        noteViewModel = noteViewModel,
+                        navController = navController,
+                        onLogout = {
+                            authUseCase.logout() // Cierra sesión
+                            isLoggedIn = false   // Vuelve a login
+                        }
                     )
 
                 } else {

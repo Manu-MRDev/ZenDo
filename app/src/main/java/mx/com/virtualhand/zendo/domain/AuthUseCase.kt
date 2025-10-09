@@ -20,4 +20,10 @@ class AuthUseCase(private val repository: AuthRepository) {
 
     // Usuario actual
     fun getCurrentUser() = repository.getCurrentUser()
+
+    // Cerrar sesión
+    fun logout() {
+        repository.logout() // ✅ corregido
+    }
 }
+
