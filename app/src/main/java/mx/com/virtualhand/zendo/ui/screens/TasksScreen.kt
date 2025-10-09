@@ -10,47 +10,58 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import mx.com.virtualhand.zendo.domain.Task
-import mx.com.virtualhand.zendo.ui.components.*
+import mx.com.virtualhand.zendo.ui.components.AddTaskButton
+import mx.com.virtualhand.zendo.ui.components.AddTaskForm
+import mx.com.virtualhand.zendo.ui.components.TaskCard
 import mx.com.virtualhand.zendo.ui.viewmodel.TaskViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun TasksScreen(
-    navController: NavController,
-    taskViewModel: TaskViewModel = viewModel()
-) {
+fun TasksScreen(taskViewModel: TaskViewModel) {
     val scope = rememberCoroutineScope()
-    val tasks by taskViewModel.tasks.collectAsState()
+    val tasks by taskViewModel.tasks.collectAsState(initial = emptyList())
 
+    // Estado del filtro: true = completadas, false = no completadas
+    var showCompleted by remember { mutableStateOf(false) }
+
+    // Estado para diálogo de agregar/editar
     var showTaskDialog by remember { mutableStateOf(false) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
-    var showCompletedTasks by remember { mutableStateOf(false) } // false = mostrar no completadas
-    var selectedCategory by remember { mutableStateOf<String?>(null) }
 
-    // Filtrado
-    val filteredTasks = tasks.filter { task ->
-        val statusMatch = task.done == showCompletedTasks
-        val categoryMatch = selectedCategory?.let { task.category == it } ?: true
-        statusMatch && categoryMatch
-    }
+    val filteredTasks = tasks.filter { it.done == showCompleted }
 
     Scaffold(
         topBar = {
-            MainTopBar(
-                categories = tasks.map { it.category }.distinct(),
-                onMenuItemClick = { /* Perfil, Configuración, Ayuda, Cerrar sesión */ },
-                onFilterSelected = { category -> selectedCategory = category },
-                onDateSelected = { /* opcional */ }
-            )
-        },
-        bottomBar = {
-            BottomNavigationBar(navController = navController)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(
+                    onClick = { showCompleted = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (!showCompleted) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Text("No Completadas")
+                }
+                Button(
+                    onClick = { showCompleted = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (showCompleted) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Text("Completadas")
+                }
+            }
         },
         floatingActionButton = {
+            // FAB solo en TasksScreen
             AddTaskButton(
                 onClick = {
                     taskToEdit = null
@@ -59,51 +70,23 @@ fun TasksScreen(
             )
         },
         content = { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                // Botones de filtro arriba
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Button(
-                        onClick = { showCompletedTasks = false },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!showCompletedTasks) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.surface
-                        )
-                    ) { Text("No completadas") }
-
-                    Button(
-                        onClick = { showCompletedTasks = true },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (showCompletedTasks) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.surface
-                        )
-                    ) { Text("Completadas") }
-                }
-
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
                 if (filteredTasks.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Text(
-                            text = "No hay tareas",
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
+                    Text(
+                        text = "No hay tareas",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(modifier = Modifier.fillMaxSize().padding(8.dp)) {
                         items(filteredTasks) { task ->
                             TaskCard(
                                 task = task,
                                 onCheckedChange = { done ->
                                     scope.launch { taskViewModel.updateTask(task.copy(done = done)) }
                                 },
-                                onDelete = { scope.launch { taskViewModel.removeTask(task) } },
+                                onDelete = {
+                                    scope.launch { taskViewModel.removeTask(task) }
+                                },
                                 onUpdate = {
                                     taskToEdit = task
                                     showTaskDialog = true
@@ -116,6 +99,7 @@ fun TasksScreen(
         }
     )
 
+    // Diálogo de agregar/editar tarea en TasksScreen
     if (showTaskDialog) {
         AddTaskForm(
             onDismiss = { showTaskDialog = false },

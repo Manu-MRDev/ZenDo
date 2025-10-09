@@ -44,9 +44,9 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController() // ✅ Creamos NavController aquí
 
                     MainScreenWithBottomNav(
-                        navController = navController,
                         taskViewModel = taskViewModel
                     )
+
                 } else {
                     LoginScreen(
                         onGoogleLogin = { signInWithGoogle { success -> isLoggedIn = success } },
