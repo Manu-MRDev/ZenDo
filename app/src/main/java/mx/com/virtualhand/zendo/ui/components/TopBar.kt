@@ -59,6 +59,7 @@ fun MainTopBar(
         onDismissRequest = { showMenu = false }
     ) {
         DropdownMenuItem(text = { Text("Perfil") }, onClick = { onMenuItemClick("Perfil"); showMenu = false })
+        // 🔹 "Configuración" abrirá el diálogo de selección de tema
         DropdownMenuItem(text = { Text("Configuración") }, onClick = { onMenuItemClick("Configuración"); showMenu = false })
         DropdownMenuItem(text = { Text("Información") }, onClick = { onMenuItemClick("Información"); showMenu = false })
         DropdownMenuItem(text = { Text("Cerrar sesión") }, onClick = { onMenuItemClick("Cerrar sesión"); showMenu = false })

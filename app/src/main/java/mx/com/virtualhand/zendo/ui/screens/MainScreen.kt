@@ -27,7 +27,8 @@ fun MainScreenWithBottomNav(
     taskViewModel: TaskViewModel,
     noteViewModel: NoteViewModel,
     navController: NavHostController,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onOpenThemeDialog: () -> Unit // 🔹 Nuevo callback para abrir diálogo de tema
 ) {
     val tasks by taskViewModel.tasks.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
@@ -36,7 +37,7 @@ fun MainScreenWithBottomNav(
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
 
-    // 🔹 NUEVO: Estado para mostrar el diálogo de información
+    // 🔹 Estado para mostrar el diálogo de información
     var showInfoDialog by remember { mutableStateOf(false) }
 
     val filteredTasks = selectedCategory?.let { category ->
@@ -52,7 +53,8 @@ fun MainScreenWithBottomNav(
                 onMenuItemClick = { menuItem ->
                     when (menuItem) {
                         "Cerrar sesión" -> onLogout()
-                        "Información" -> showInfoDialog = true // 🔹 Abrir diálogo
+                        "Información" -> showInfoDialog = true
+                        "Configuración" -> onOpenThemeDialog() // 🔹 Abrir diálogo de tema desde Configuración
                     }
                 },
                 onFilterSelected = { category ->
@@ -145,13 +147,13 @@ fun MainScreenWithBottomNav(
             text = {
                 Text(
                     "ZenDo es una aplicación diseñada para ayudarte a organizar tus tareas, notas y tiempo " +
-                            "de forma sencilla. \n\nVersión 1.0. Desarrollado por VirtualHand."
+                            "de forma sencilla. \n\nVersión 1.0. Desarrollado por Manuel Martinez Ramirez 04_02."
                 )
             }
         )
     }
 
-    // Diálogo de agregar/editar tarea
+    // 🔹 Diálogo de agregar/editar tarea
     if (showTaskDialog) {
         AddTaskForm(
             onDismiss = { showTaskDialog = false },

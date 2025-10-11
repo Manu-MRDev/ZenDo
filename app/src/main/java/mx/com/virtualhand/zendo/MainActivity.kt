@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -22,6 +23,14 @@ import mx.com.virtualhand.zendo.ui.viewmodel.NoteViewModel
 import mx.com.virtualhand.zendo.ui.viewmodel.NoteViewModelFactory
 import mx.com.virtualhand.zendo.ui.viewmodel.TaskViewModel
 import mx.com.virtualhand.zendo.ui.viewmodel.TaskViewModelFactory
+import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+
 
 class MainActivity : ComponentActivity() {
 
@@ -35,11 +44,15 @@ class MainActivity : ComponentActivity() {
         authUseCase = AuthUseCase(AuthRepository(auth))
 
         setContent {
-            ZenDoTheme {
+            // Estado para controlar el tema
+            var themePreference by rememberSaveable { mutableStateOf("system") }
+            // Estado para mostrar el diálogo de selección de tema
+            var showThemeDialog by remember { mutableStateOf(false) }
+
+            ZenDoTheme(themePreference = themePreference) {
                 var isLoggedIn by remember { mutableStateOf(authUseCase.getCurrentUser() != null) }
 
                 if (isLoggedIn) {
-
                     val navController = rememberNavController()
 
                     val taskViewModel: TaskViewModel = viewModel(
@@ -54,10 +67,33 @@ class MainActivity : ComponentActivity() {
                         noteViewModel = noteViewModel,
                         navController = navController,
                         onLogout = {
-                            authUseCase.logout() // Cierra sesión
-                            isLoggedIn = false   // Vuelve a login
-                        }
+                            authUseCase.logout()
+                            isLoggedIn = false
+                        },
+                        onOpenThemeDialog = { showThemeDialog = true } // Abrir diálogo desde Configuración
                     )
+
+                    // Diálogo de selección de tema
+                    if (showThemeDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showThemeDialog = false },
+                            title = { Text("Seleccionar tema") },
+                            text = {
+                                Column {
+                                    TextButton(onClick = { themePreference = "system"; showThemeDialog = false }) {
+                                        Text("Seguir sistema")
+                                    }
+                                    TextButton(onClick = { themePreference = "light"; showThemeDialog = false }) {
+                                        Text("Modo claro")
+                                    }
+                                    TextButton(onClick = { themePreference = "dark"; showThemeDialog = false }) {
+                                        Text("Modo oscuro")
+                                    }
+                                }
+                            },
+                            confirmButton = { /* No hace falta botón adicional */ },
+                        )
+                    }
 
                 } else {
                     LoginScreen(
