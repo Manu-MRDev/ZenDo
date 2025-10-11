@@ -60,7 +60,7 @@ fun MainTopBar(
     ) {
         DropdownMenuItem(text = { Text("Perfil") }, onClick = { onMenuItemClick("Perfil"); showMenu = false })
         DropdownMenuItem(text = { Text("Configuración") }, onClick = { onMenuItemClick("Configuración"); showMenu = false })
-        DropdownMenuItem(text = { Text("Ayuda") }, onClick = { onMenuItemClick("Ayuda"); showMenu = false })
+        DropdownMenuItem(text = { Text("Información") }, onClick = { onMenuItemClick("Información"); showMenu = false })
         DropdownMenuItem(text = { Text("Cerrar sesión") }, onClick = { onMenuItemClick("Cerrar sesión"); showMenu = false })
     }
 

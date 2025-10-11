@@ -27,24 +27,22 @@ fun MainScreenWithBottomNav(
     taskViewModel: TaskViewModel,
     noteViewModel: NoteViewModel,
     navController: NavHostController,
-    onLogout: () -> Unit // 🔹 Callback para cerrar sesión
+    onLogout: () -> Unit
 ) {
     val tasks by taskViewModel.tasks.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
 
-    // Estado para el diálogo de tarea
     var showTaskDialog by remember { mutableStateOf(false) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
-
-    // Estado de filtrado por categoría
     var selectedCategory by remember { mutableStateOf<String?>(null) }
 
-    // Lista filtrada según categoría seleccionada
+    // 🔹 NUEVO: Estado para mostrar el diálogo de información
+    var showInfoDialog by remember { mutableStateOf(false) }
+
     val filteredTasks = selectedCategory?.let { category ->
         tasks.filter { it.category == category }
     } ?: tasks
 
-    // TimerViewModel
     val timerViewModel: TimerViewModel = viewModel()
 
     Scaffold(
@@ -53,8 +51,8 @@ fun MainScreenWithBottomNav(
                 categories = tasks.map { it.category }.distinct(),
                 onMenuItemClick = { menuItem ->
                     when (menuItem) {
-                        "Cerrar sesión" -> onLogout() // 🔹 Cierra sesión
-                        else -> { /* otras opciones */ }
+                        "Cerrar sesión" -> onLogout()
+                        "Información" -> showInfoDialog = true // 🔹 Abrir diálogo
                     }
                 },
                 onFilterSelected = { category ->
@@ -79,7 +77,11 @@ fun MainScreenWithBottomNav(
                             modifier = Modifier.align(Alignment.Center)
                         )
                     } else {
-                        LazyColumn(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(8.dp)
+                        ) {
                             items(filteredTasks) { task ->
                                 TaskCard(
                                     task = task,
@@ -100,7 +102,6 @@ fun MainScreenWithBottomNav(
                         }
                     }
 
-                    // FAB para agregar tarea
                     AddTaskButton(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
@@ -131,7 +132,26 @@ fun MainScreenWithBottomNav(
         }
     }
 
-    // ----- DIÁLOGO COMPARTIDO DE TAREA -----
+    // 🔹 Diálogo informativo
+    if (showInfoDialog) {
+        AlertDialog(
+            onDismissRequest = { showInfoDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showInfoDialog = false }) {
+                    Text("Cerrar")
+                }
+            },
+            title = { Text("Acerca de ZenDo") },
+            text = {
+                Text(
+                    "ZenDo es una aplicación diseñada para ayudarte a organizar tus tareas, notas y tiempo " +
+                            "de forma sencilla. \n\nVersión 1.0. Desarrollado por VirtualHand."
+                )
+            }
+        )
+    }
+
+    // Diálogo de agregar/editar tarea
     if (showTaskDialog) {
         AddTaskForm(
             onDismiss = { showTaskDialog = false },
@@ -144,4 +164,3 @@ fun MainScreenWithBottomNav(
         )
     }
 }
-
