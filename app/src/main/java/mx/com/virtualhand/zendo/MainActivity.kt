@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
 
                     val taskViewModel: TaskViewModel = viewModel(
-                        factory = TaskViewModelFactory(applicationContext)
+                        factory = TaskViewModelFactory()
                     )
                     val noteViewModel: NoteViewModel = viewModel(
                         factory = NoteViewModelFactory(applicationContext)

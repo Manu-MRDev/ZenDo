@@ -11,20 +11,16 @@ class TaskUseCase(private val repository: TaskRepository) {
 
     // Agregar tarea
     suspend fun addTask(task: Task) {
-        val currentTasks = repository.tasksFlow.first() // Obtener la lista actual
-        repository.saveTasks(currentTasks + task)       // Guardar nueva lista
+        repository.addTask(task) // Antes: saveTasks
     }
 
     // Eliminar tarea
     suspend fun removeTask(task: Task) {
-        val currentTasks = repository.tasksFlow.first()
-        repository.saveTasks(currentTasks.filter { it.id != task.id })
+        repository.removeTask(task) // Antes: saveTasks
     }
 
     // Actualizar tarea
     suspend fun updateTask(updatedTask: Task) {
-        val currentTasks = repository.tasksFlow.first()
-        val newList = currentTasks.map { if (it.id == updatedTask.id) updatedTask else it }
-        repository.saveTasks(newList)
+        repository.updateTask(updatedTask) // Antes: saveTasks
     }
 }

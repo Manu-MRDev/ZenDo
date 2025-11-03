@@ -1,34 +1,48 @@
 package mx.com.virtualhand.zendo.data
 
-import android.content.Context
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 import mx.com.virtualhand.zendo.domain.Task
 
-private val Context.dataStore by preferencesDataStore(name = "tasks_store")
+class TaskRepository {
 
-class TaskRepository(private val context: Context) {
+    private val firestore = FirebaseFirestore.getInstance()
+    private val tasksCollection = firestore.collection("tasks")
 
-    private val TASKS_KEY = stringPreferencesKey("tasks_json")
-    private val gson = Gson()
+    // 🔹 Escuchar en tiempo real los cambios en Firestore
+    val tasksFlow: Flow<List<Task>> = callbackFlow {
+        val listener = tasksCollection.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
 
-    // Obtener lista de tareas como Flow
-    val tasksFlow: Flow<List<Task>> = context.dataStore.data
-        .map { prefs ->
-            val json = prefs[TASKS_KEY]
-            if (json.isNullOrEmpty()) emptyList()
-            else gson.fromJson(json, object : TypeToken<List<Task>>() {}.type)
+            val tasks = snapshot?.documents?.mapNotNull { doc ->
+                doc.toObject(Task::class.java)
+            } ?: emptyList()
+
+            trySend(tasks)
         }
 
-    // Guardar lista completa
-    suspend fun saveTasks(tasks: List<Task>) {
-        context.dataStore.edit { prefs ->
-            prefs[TASKS_KEY] = gson.toJson(tasks)
-        }
+        awaitClose { listener.remove() }
+    }
+
+    // 🔹 Agregar tarea
+    suspend fun addTask(task: Task) {
+        tasksCollection.document(task.id).set(task).await()
+    }
+
+    // 🔹 Eliminar tarea
+    suspend fun removeTask(task: Task) {
+        tasksCollection.document(task.id).delete().await()
+    }
+
+    // 🔹 Actualizar tarea
+    suspend fun updateTask(task: Task) {
+        tasksCollection.document(task.id).set(task).await()
     }
 }
+
