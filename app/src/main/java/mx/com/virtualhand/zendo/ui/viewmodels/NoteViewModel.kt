@@ -1,17 +1,18 @@
 package mx.com.virtualhand.zendo.ui.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import mx.com.virtualhand.zendo.domain.Note
 import mx.com.virtualhand.zendo.domain.NoteUseCase
 import mx.com.virtualhand.zendo.data.NoteRepository
 
-class NoteViewModel(context: Context) : ViewModel() {
+class NoteViewModel : ViewModel() {
 
-    private val repository = NoteRepository(context)
+    private val repository = NoteRepository()
     private val useCase = NoteUseCase(repository)
 
     // Estado de la lista de notas

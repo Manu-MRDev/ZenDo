@@ -1,34 +1,47 @@
 package mx.com.virtualhand.zendo.data
 
-import android.content.Context
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 import mx.com.virtualhand.zendo.domain.Note
 
-private val Context.dataStore by preferencesDataStore(name = "notes_store")
+class NoteRepository {
 
-class NoteRepository(private val context: Context) {
+    private val firestore = FirebaseFirestore.getInstance()
+    private val notesCollection = firestore.collection("notes")
 
-    private val NOTES_KEY = stringPreferencesKey("notes_json")
-    private val gson = Gson()
+    // 🔹 Escuchar en tiempo real los cambios en Firestore
+    val notesFlow: Flow<List<Note>> = callbackFlow {
+        val listener = notesCollection.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
 
-    // Obtener lista de notas como Flow
-    val notesFlow: Flow<List<Note>> = context.dataStore.data
-        .map { prefs ->
-            val json = prefs[NOTES_KEY]
-            if (json.isNullOrEmpty()) emptyList()
-            else gson.fromJson(json, object : TypeToken<List<Note>>() {}.type)
+            val notes = snapshot?.documents?.mapNotNull { doc ->
+                doc.toObject(Note::class.java)
+            } ?: emptyList()
+
+            trySend(notes)
         }
 
-    // Guardar lista completa
-    suspend fun saveNotes(notes: List<Note>) {
-        context.dataStore.edit { prefs ->
-            prefs[NOTES_KEY] = gson.toJson(notes)
-        }
+        awaitClose { listener.remove() }
+    }
+
+    // 🔹 Agregar nota
+    suspend fun addNote(note: Note) {
+        notesCollection.document(note.id).set(note).await()
+    }
+
+    // 🔹 Eliminar nota
+    suspend fun removeNote(note: Note) {
+        notesCollection.document(note.id).delete().await()
+    }
+
+    // 🔹 Actualizar nota
+    suspend fun updateNote(note: Note) {
+        notesCollection.document(note.id).set(note).await()
     }
 }

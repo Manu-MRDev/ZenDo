@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
                         factory = TaskViewModelFactory()
                     )
                     val noteViewModel: NoteViewModel = viewModel(
-                        factory = NoteViewModelFactory(applicationContext)
+                        factory = NoteViewModelFactory()
                     )
 
                     MainScreenWithBottomNav(

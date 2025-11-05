@@ -10,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 import mx.com.virtualhand.zendo.domain.Note
@@ -25,6 +24,7 @@ fun NotesScreen(
     noteViewModel: NoteViewModel,
     navController: NavHostController
 ) {
+    // 🔹 Observa el flujo de notas desde Firestore en tiempo real
     val notes by noteViewModel.notes.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
 
@@ -39,7 +39,11 @@ fun NotesScreen(
                 modifier = Modifier.align(Alignment.Center)
             )
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp)
+            ) {
                 items(notes) { note ->
                     NoteCard(
                         note = note,
@@ -48,6 +52,7 @@ fun NotesScreen(
                             showNoteDialog = true
                         },
                         onDelete = {
+                            // 🔹 Eliminación con corrutina (asincrónica)
                             scope.launch { noteViewModel.removeNote(note) }
                         }
                     )
@@ -55,7 +60,7 @@ fun NotesScreen(
             }
         }
 
-        // FAB de agregar nota
+        // 🔹 Botón flotante para agregar notas
         AddNoteButton(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -67,18 +72,20 @@ fun NotesScreen(
         )
     }
 
-    // Diálogo de agregar/editar nota
+    // 🔹 Diálogo de agregar o editar nota
     if (showNoteDialog) {
         AddNoteForm(
             existingNote = noteToEdit,
             onDismiss = { showNoteDialog = false },
             onSave = { newNote ->
-                if (noteToEdit == null) {
-                    noteViewModel.addNote(newNote)
-                } else {
-                    noteViewModel.updateNote(newNote)
+                scope.launch {
+                    if (noteToEdit == null) {
+                        noteViewModel.addNote(newNote)
+                    } else {
+                        noteViewModel.updateNote(newNote)
+                    }
+                    showNoteDialog = false
                 }
-                showNoteDialog = false
             }
         )
     }
