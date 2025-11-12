@@ -6,14 +6,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.delay
 import mx.com.virtualhand.zendo.data.AuthRepository
 import mx.com.virtualhand.zendo.domain.AuthUseCase
 import mx.com.virtualhand.zendo.ui.screens.LoginScreen
@@ -23,14 +28,6 @@ import mx.com.virtualhand.zendo.ui.viewmodel.NoteViewModel
 import mx.com.virtualhand.zendo.ui.viewmodel.NoteViewModelFactory
 import mx.com.virtualhand.zendo.ui.viewmodel.TaskViewModel
 import mx.com.virtualhand.zendo.ui.viewmodel.TaskViewModelFactory
-import androidx.compose.material3.*
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-
 
 class MainActivity : ComponentActivity() {
 
@@ -40,66 +37,89 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // ✅ Permite que Jetpack Compose maneje los insets del sistema
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         val auth = Firebase.auth
         authUseCase = AuthUseCase(AuthRepository(auth))
 
         setContent {
-            // Estado para controlar el tema
             var themePreference by rememberSaveable { mutableStateOf("system") }
-            // Estado para mostrar el diálogo de selección de tema
             var showThemeDialog by remember { mutableStateOf(false) }
+            var isLoggedIn by remember { mutableStateOf(authUseCase.getCurrentUser() != null) }
 
             ZenDoTheme(themePreference = themePreference) {
-                var isLoggedIn by remember { mutableStateOf(authUseCase.getCurrentUser() != null) }
+                // ✅ Asegura que todos los Composables respeten status bar y navegación
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .systemBarsPadding()
+                ) {
+                    if (isLoggedIn) {
+                        // Pequeño retraso para evitar salto visual al iniciar
+                        LaunchedEffect(Unit) { delay(150) }
 
-                if (isLoggedIn) {
-                    val navController = rememberNavController()
+                        val navController = rememberNavController()
+                        val taskViewModel: TaskViewModel = viewModel(factory = TaskViewModelFactory())
+                        val noteViewModel: NoteViewModel = viewModel(factory = NoteViewModelFactory())
 
-                    val taskViewModel: TaskViewModel = viewModel(
-                        factory = TaskViewModelFactory()
-                    )
-                    val noteViewModel: NoteViewModel = viewModel(
-                        factory = NoteViewModelFactory()
-                    )
+                        MainScreenWithBottomNav(
+                            taskViewModel = taskViewModel,
+                            noteViewModel = noteViewModel,
+                            navController = navController,
+                            onLogout = {
+                                authUseCase.logout()
+                                isLoggedIn = false
+                            },
+                            onOpenThemeDialog = { showThemeDialog = true }
+                        )
 
-                    MainScreenWithBottomNav(
-                        taskViewModel = taskViewModel,
-                        noteViewModel = noteViewModel,
-                        navController = navController,
-                        onLogout = {
-                            authUseCase.logout()
-                            isLoggedIn = false
-                        },
-                        onOpenThemeDialog = { showThemeDialog = true } // Abrir diálogo desde Configuración
-                    )
+                        if (showThemeDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showThemeDialog = false },
+                                title = { Text("Seleccionar tema") },
+                                text = {
+                                    Column {
+                                        TextButton(onClick = {
+                                            themePreference = "system"
+                                            showThemeDialog = false
+                                        }) { Text("Seguir sistema") }
 
-                    // Diálogo de selección de tema
-                    if (showThemeDialog) {
-                        AlertDialog(
-                            onDismissRequest = { showThemeDialog = false },
-                            title = { Text("Seleccionar tema") },
-                            text = {
-                                Column {
-                                    TextButton(onClick = { themePreference = "system"; showThemeDialog = false }) {
-                                        Text("Seguir sistema")
+                                        TextButton(onClick = {
+                                            themePreference = "light"
+                                            showThemeDialog = false
+                                        }) { Text("Modo claro") }
+
+                                        TextButton(onClick = {
+                                            themePreference = "dark"
+                                            showThemeDialog = false
+                                        }) { Text("Modo oscuro") }
                                     }
-                                    TextButton(onClick = { themePreference = "light"; showThemeDialog = false }) {
-                                        Text("Modo claro")
-                                    }
-                                    TextButton(onClick = { themePreference = "dark"; showThemeDialog = false }) {
-                                        Text("Modo oscuro")
+                                },
+                                confirmButton = {}
+                            )
+                        }
+
+                    } else {
+                        LoginScreen(
+                            onGoogleLogin = {
+                                signInWithGoogle { success ->
+                                    if (success) {
+                                        window.decorView.requestLayout()
+                                        isLoggedIn = true
                                     }
                                 }
                             },
-                            confirmButton = { /* No hace falta botón adicional */ },
+                            onGithubLogin = {
+                                signInWithGitHub { success ->
+                                    if (success) {
+                                        window.decorView.requestLayout()
+                                        isLoggedIn = true
+                                    }
+                                }
+                            }
                         )
                     }
-
-                } else {
-                    LoginScreen(
-                        onGoogleLogin = { signInWithGoogle { success -> isLoggedIn = success } },
-                        onGithubLogin = { signInWithGitHub { success -> isLoggedIn = success } }
-                    )
                 }
             }
         }

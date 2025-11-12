@@ -18,7 +18,11 @@ fun LoginScreen(
     onGithubLogin: () -> Unit
 ) {
     Box(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp)
+            .systemBarsPadding()
+            .imePadding(), // <-- agrega esto
         contentAlignment = Alignment.Center
     ) {
         Column(

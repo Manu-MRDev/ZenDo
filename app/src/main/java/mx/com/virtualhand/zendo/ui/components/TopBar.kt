@@ -9,6 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,43 +45,73 @@ fun MainTopBar(
                 categories.forEach { category ->
                     DropdownMenuItem(
                         text = { Text(category) },
-                        onClick = { onFilterSelected(category); showCategoryMenu = false }
+                        onClick = {
+                            onFilterSelected(category)
+                            showCategoryMenu = false
+                        }
                     )
                 }
             }
 
-            // Calendario
-            IconButton(onClick = { showCalendar = !showCalendar }) {
-                Icon(Icons.Default.CalendarToday, contentDescription = "Seleccionar fecha")
+            // Botón de calendario
+            IconButton(onClick = { showCalendar = true }) {
+                Icon(Icons.Default.CalendarToday, contentDescription = "Calendario")
             }
         }
     )
 
-    // Menú hamburguesa
+    // Menú lateral
     DropdownMenu(
         expanded = showMenu,
         onDismissRequest = { showMenu = false }
     ) {
-        DropdownMenuItem(text = { Text("Perfil") }, onClick = { onMenuItemClick("Perfil"); showMenu = false })
-        // 🔹 "Configuración" abrirá el diálogo de selección de tema
-        DropdownMenuItem(text = { Text("Configuración") }, onClick = { onMenuItemClick("Configuración"); showMenu = false })
-        DropdownMenuItem(text = { Text("Información") }, onClick = { onMenuItemClick("Información"); showMenu = false })
-        DropdownMenuItem(text = { Text("Cerrar sesión") }, onClick = { onMenuItemClick("Cerrar sesión"); showMenu = false })
+        DropdownMenuItem(
+            text = { Text("Configuración") },
+            onClick = { onMenuItemClick("Configuración"); showMenu = false }
+        )
+        DropdownMenuItem(
+            text = { Text("Información") },
+            onClick = { onMenuItemClick("Información"); showMenu = false }
+        )
+        DropdownMenuItem(
+            text = { Text("Cerrar sesión") },
+            onClick = { onMenuItemClick("Cerrar sesión"); showMenu = false }
+        )
     }
 
-    // Calendario simple con AlertDialog
+    // 📅 Calendario real dentro del diálogo
     if (showCalendar) {
+        val datePickerState = rememberDatePickerState()
         AlertDialog(
             onDismissRequest = { showCalendar = false },
-            title = { Text("Seleccionar fecha") },
-            text = { Text("Aquí se desplegará un calendario real") },
             confirmButton = {
-                TextButton(onClick = { onDateSelected("2025-10-08"); showCalendar = false }) {
-                    Text("Seleccionar")
+                TextButton(
+                    onClick = {
+                        val selectedDateMillis = datePickerState.selectedDateMillis
+                        val selectedDate = selectedDateMillis?.let {
+                            val localDate = Instant.ofEpochMilli(it)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate()
+                            localDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                        } ?: "Sin selección"
+
+                        onDateSelected(selectedDate)
+                        showCalendar = false
+                    }
+                ) {
+                    //Text("Seleccionar")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showCalendar = false }) { Text("Cancelar") }
+                TextButton(onClick = { showCalendar = false }) {
+                    Text("Cancelar")
+                }
+            },
+            text = {
+                DatePicker(
+                    state = datePickerState,
+                    showModeToggle = false // oculta el selector de año/mes
+                )
             }
         )
     }
